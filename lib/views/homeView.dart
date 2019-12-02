@@ -1,12 +1,11 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:pr0gramm/api/apiClient.dart';
+import 'package:pr0gramm/api/dtos/getItemInfoResponse.dart';
 import 'package:pr0gramm/api/dtos/getItemsResponse.dart';
 import 'package:pr0gramm/api/itemApi.dart';
 import 'package:pr0gramm/api/profileApi.dart';
 import 'package:pr0gramm/data/sharedPrefKeys.dart';
+import 'package:pr0gramm/helper/FutureFlowControl.dart';
 import 'package:pr0gramm/widgets/inherited.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
@@ -128,21 +127,30 @@ class _HomePageState extends State<HomePage> {
       gridDelegate:
           new SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
       itemBuilder: (context, index) {
-        return FutureBuilder<Item>(
-          future: getItem(index),
+        return FutureBuilder<Map<String, dynamic>>(
+          future: FutureFlowControl()
+              .add('item', future: getItem(index))
+              .add('info',
+                  futureFunc: (map) => ItemApi().getItemInfo(map['item'].id))
+              .dependsOn(['item'])
+              .run(),
           builder: (context, snapshot) {
-            if (snapshot.hasData)
+            if (snapshot.hasData) {
+              Item item = snapshot.data['item'];
+              GetItemInfoResponse info = snapshot.data['info'];
               return GestureDetector(
-                child: Image.network(
-                    "https://thumb.pr0gramm.com/${snapshot.data.thumb}"),
+                child:
+                    Image.network("https://thumb.pr0gramm.com/${item.thumb}"),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => DetailView(item: snapshot.data)),
+                        builder: (context) =>
+                            DetailView(item: item, info: info)),
                   );
                 },
               );
+            }
 
             return CircularProgressIndicator();
           },
@@ -163,10 +171,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+
 class DetailView extends StatefulWidget {
   final Item item;
+  final GetItemInfoResponse info;
+  final controller = new ScrollController();
 
-  DetailView({Key key, this.item}) : super(key: key);
+  DetailView({Key key, this.item, this.info}) : super(key: key);
 
   @override
   _DetailViewState createState() => _DetailViewState();
@@ -175,10 +186,56 @@ class DetailView extends StatefulWidget {
 class _DetailViewState extends State<DetailView> {
   VideoPlayerController _controller;
 
+  /// Useful to tweak how fast background image slides when scrolling.
+  static const double speedCoefficient = 0.7;
+
+  /// Scroll offset at the moment this widget appeared on the screen
+  double initOffset;
+
+  /// Size of the viewport
+  double viewportSize;
+
+  /// Offset of background image in percents, must be in range [-100.0, 100.0].
+  ///
+  /// Offset `0.0` means the images is vertically centered, `-100.0` means
+  /// it's top-alligned and `100.0` it's bottom-aligned.
+  double imageOffset = -100;
+
+  /// Called for each scroll notification event.
+  void _handleScroll() {
+    /// Note that this logic is not bulletproof and needs some tweaking.
+    /// But hopefully it is good enough to represent the approach.
+
+    /// We first get the delta of current scroll offset to our [initOffset].
+    /// This value would normally be less than the [viewportSize].
+    /// It can be positive or negative depending on the direction of scroll.
+    final double delta = widget.controller.offset - initOffset;
+
+    /// Having [delta] we can calculate the distance travelled as a percentage
+    /// of the [viewportSize].
+    final int viewportFraction =
+        (100 * delta / viewportSize).round().clamp(-100, 100);
+
+    /// Adjust the value by our [speedCoefficient].
+    /// We also negate the result here because the image must actually slide
+    /// in the oposite direction to scroll.
+    final double offset = -1 * speedCoefficient * viewportFraction;
+
+    if (offset != imageOffset) {
+      /// Not every scroll notification will result in a different offset so
+      /// we can save on repainting a little.
+      setState(() {
+        imageOffset = offset;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-
+    initOffset = widget.controller.offset;
+    viewportSize = widget.controller.position.viewportDimension;
+    widget.controller.addListener(_handleScroll);
     if (widget.item.image.endsWith(".mp4"))
       _controller = VideoPlayerController.network(
           "https://vid.pr0gramm.com/${widget.item.image}")
@@ -191,6 +248,9 @@ class _DetailViewState extends State<DetailView> {
 
   @override
   Widget build(BuildContext context) {
+    /// Adjust standard [Alignment.center] by the value of [imageOffset].
+    double y = imageOffset / 100;
+    var alignment = Alignment.center.add(new Alignment(0.0, y));
     if (widget.item.image.endsWith(".mp4"))
       return Scaffold(
         backgroundColor: Colors.black45,
@@ -224,13 +284,45 @@ class _DetailViewState extends State<DetailView> {
       appBar: AppBar(
         title: Text("Post"),
       ),
-      body: Image.network("https://img.pr0gramm.com/${widget.item.image}"),
+      body: Image.network(
+        "https://img.pr0gramm.com/${widget.item.image}",
+        alignment: alignment,
+      ),
     );
   }
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_handleScroll);
+    widget.controller?.dispose();
     _controller?.dispose();
     super.dispose();
+  }
+}
+
+class CommentView extends StatefulWidget {
+  CommentView({Key key}) : super(key: key);
+
+  @override
+  _CommentViewState createState() {
+    return _CommentViewState();
+  }
+}
+
+class _CommentViewState extends State<CommentView> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return null;
   }
 }

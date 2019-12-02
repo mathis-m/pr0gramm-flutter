@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 import 'package:pr0gramm/views/homeView.dart';
 import 'package:pr0gramm/widgets/inherited.dart';
-
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
