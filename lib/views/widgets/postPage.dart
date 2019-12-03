@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pr0gramm/api/itemApi.dart';
 import 'package:pr0gramm/entities/linkedComments.dart';
 import 'package:pr0gramm/entities/postInfo.dart';
 import 'package:pr0gramm/services/itemProvider.dart';
 import 'package:pr0gramm/services/timeFormatter.dart';
 import 'package:pr0gramm/views/widgets/userMark.dart';
+import 'package:pr0gramm/widgets/inherited.dart';
 
 import '../postView.dart';
 
@@ -35,22 +37,26 @@ class PostButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var nonce = "${MyInherited.of(context)?.profile?.user?.id}";//.substring(0, 16);
     return Row(
       children: [
         IconButton(
+          // TODO: get votes from somewhere
           icon: Icon(Icons.add_circle_outline),
-          color: Colors.white,
-          onPressed: () {},
+          color: false ? Color(0xFFee4d2e) : Colors.white,
+          onPressed: () => ItemApi().vote(info.item.id, Vote.UP, nonce),
         ),
         IconButton(
-          color: Colors.white,
+          // TODO: get votes from somewhere
+          color: false ? Color(0xFFee4d2e) : Colors.white,
           icon: Icon(Icons.remove_circle_outline),
-          onPressed: () {},
+          onPressed: () => ItemApi().vote(info.item.id, Vote.DOWN, nonce),
         ),
         IconButton(
-          color: Colors.white,
+          // TODO: get votes from user info
+          color: false ? Color(0xFFee4d2e) : Colors.white,
           icon: Icon(Icons.favorite_border),
-          onPressed: () {},
+          onPressed: () => ItemApi().vote(info.item.id, Vote.DOWN, nonce),
         ),
         Container(
           height: 30.0,
