@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:pr0gramm/data/sharedPrefKeys.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'baseApi.dart';
 import 'dtos/LoginResponse.dart';
@@ -39,6 +41,9 @@ class LoginApi extends BaseApi {
         loginResponse.username = meJson.name;
         loginResponse.token = ppCookie.value;
         loginResponse.meToken = meCookie.value;
+
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString(SharedPrefKeys.NONCE, meJson.id.substring(0, 16));
       }
 
       return loginResponse;

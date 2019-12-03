@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pr0gramm/api/itemApi.dart';
 import 'package:pr0gramm/entities/linkedComments.dart';
 import 'package:pr0gramm/entities/postInfo.dart';
 import 'package:pr0gramm/services/itemProvider.dart';
@@ -38,19 +39,22 @@ class PostButtons extends StatelessWidget {
     return Row(
       children: [
         IconButton(
+          // TODO: get votes from somewhere
           icon: Icon(Icons.add_circle_outline),
-          color: Colors.white,
-          onPressed: () {},
+          color: false ? Color(0xFFee4d2e) : Colors.white,
+          onPressed: () => ItemApi().vote(info.item.id, Vote.UP),
         ),
         IconButton(
-          color: Colors.white,
+          // TODO: get votes from somewhere
+          color: false ? Color(0xFFee4d2e) : Colors.white,
           icon: Icon(Icons.remove_circle_outline),
-          onPressed: () {},
+          onPressed: () => ItemApi().vote(info.item.id, Vote.DOWN),
         ),
         IconButton(
-          color: Colors.white,
+          // TODO: get votes from user info
+          color: false ? Color(0xFFee4d2e) : Colors.white,
           icon: Icon(Icons.favorite_border),
-          onPressed: () {},
+          onPressed: () => ItemApi().vote(info.item.id, Vote.DOWN),
         ),
         Container(
           height: 30.0,
@@ -67,7 +71,9 @@ class PostButtons extends StatelessWidget {
                   info.item.user,
                   style: authorTextStyle,
                 ),
-                UserMark(userMark: info.item.mark,)
+                UserMark(
+                  userMark: info.item.mark,
+                )
               ]),
               Text(
                 formatTime(info.item.created * 1000),
@@ -166,7 +172,8 @@ class _PostPageState extends State<PostPage> {
                       PostButtons(info: snapshot.data),
                       buildTags(context, snapshot.data),
                       Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 20.0, right: 10),
+                        padding: const EdgeInsets.only(
+                            top: 8, bottom: 20.0, right: 10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: comments.map((c) => c.build()).toList(),
